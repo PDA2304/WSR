@@ -1,0 +1,57 @@
+version: '3.9'
+services:
+    db:
+        container_name: pg_container
+        image: postgres
+        restart: always
+        environment:
+            POSTGRES_USER: root
+            POSTGRES_PASSWORD: root
+            POSTGRES_DB: test_db
+        ports:
+            - "5555:5432"
+        networks:
+            - internal
+        volumes:
+          - ./docker/database:/var/lib/postgresql/data
+    nginx:
+        build:
+            context: ./docker/nginx
+        ports:
+            - 8888:80
+        volumes:
+            - ./laravel:/var/www
+            - ./laravel/storage/app/public:/var/www/public/storage
+        networks:
+             - internal
+        depends_on:
+            - php
+    php:
+        build:
+            context: ./docker/php
+        volumes:
+            - ./laravel:/var/www
+        networks:
+            - internal
+        depends_on:
+            - db
+    pgadmin:
+        container_name: pgadmin4_container
+        image: dpage/pgadmin4
+        restart: always
+        environment:
+            PGADMIN_DEFAULT_EMAIL: admin@admin.com
+            PGADMIN_DEFAULT_PASSWORD: root
+        ports:
+            - "5055:80"
+        networks:
+            - internal
+        depends_on:
+            - db
+networks:
+    internal:
+        driver: bridge
+        ipam:
+            driver: default
+            config: 
+                - subnet: 192.168.220.0/28
