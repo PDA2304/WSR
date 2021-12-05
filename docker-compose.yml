@@ -1,0 +1,43 @@
+version: '3.1'
+
+services:
+    db:
+        image: postgres
+        restart: always
+        environment:
+            POSTGRES_PASSWORD: root
+            POSTGRES_USER: root
+            POSTGRES_DB: postgres_db
+            PGDATA: /data/postgres
+        volumes:
+          - ./docker/pg:/data/postgres
+        ports:
+          - 5432:5432
+    adminer:
+        image: adminer
+        restart: always
+        ports:
+          - 8888:8080
+        depends_on:
+          - db
+    php:
+        build: 
+          context: ./docker/php
+        ports:
+          - 9000:9000
+        depends_on:
+          - db
+        volumes:
+          - ./laravel:/var/www/
+    nginx:
+      build:
+        context: ./docker/nginx
+      ports:
+        - 8080:80
+      volumes:
+        - ./laravel:/var/www/
+        - ./laravel/storage/app/public:/var/www/public/storage
+        - ./docker/nginx/logs/nginx-access.log:/var/log/nginx/access.log
+        - ./docker/nginx/logs/nginx-error.log:/var/log/nginx/error.log
+      depends_on:
+        - php
